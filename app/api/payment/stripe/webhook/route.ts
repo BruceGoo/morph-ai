@@ -70,7 +70,9 @@ export async function POST(request: Request) {
           where: { id: user.id },
           data: {
             subscriptionStatus: subscription.status,
-            subscriptionEndsAt: new Date(subscription.current_period_end * 1000),
+            subscriptionEndsAt: subscription.current_period_end
+              ? new Date(subscription.current_period_end * 1000)
+              : null,
           },
         })
         break
