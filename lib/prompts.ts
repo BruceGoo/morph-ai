@@ -99,7 +99,13 @@ export const outfitPrompts = {
 
 export type PromptCategory = 'universe' | 'prank' | 'outfit'
 
-export function getPrompt(category: PromptCategory, templateId: string) {
+export interface PromptData {
+  name: string
+  prompt: string
+  negativePrompt: string
+}
+
+export function getPrompt(category: PromptCategory, templateId: string): PromptData | undefined {
   const prompts = {
     universe: universePrompts,
     prank: prankPrompts,
