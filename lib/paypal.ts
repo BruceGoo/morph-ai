@@ -1,5 +1,3 @@
-import { orders } from '@paypal/paypal-server-sdk'
-
 const PAYPAL_CLIENT_ID = process.env.PAYPAL_CLIENT_ID || ''
 const PAYPAL_CLIENT_SECRET = process.env.PAYPAL_CLIENT_SECRET || ''
 const PAYPAL_MODE = process.env.PAYPAL_MODE || 'sandbox'
