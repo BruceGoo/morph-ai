@@ -16,15 +16,24 @@ export interface GenerateImageResponse {
 }
 
 // Initialize Replicate client
-const replicate = new Replicate({
-  auth: process.env.REPLICATE_API_TOKEN || '',
-})
+const replicate = process.env.REPLICATE_API_TOKEN
+  ? new Replicate({
+      auth: process.env.REPLICATE_API_TOKEN,
+    })
+  : null
 
 // Using Flux Schnell for fast generation
 const FLUX_MODEL = "black-forest-labs/flux-schnell"
 
 export async function generateImage(request: GenerateImageRequest): Promise<GenerateImageResponse> {
   try {
+    if (!replicate) {
+      return {
+        success: false,
+        error: 'AI service not configured. Please set REPLICATE_API_TOKEN.'
+      }
+    }
+
     const promptData = getPrompt(request.category, request.templateId)
 
     if (!promptData) {
@@ -75,6 +84,13 @@ export async function generateImage(request: GenerateImageRequest): Promise<Gene
 // Alternative: Using Stable Diffusion for more control
 export async function generateImageWithSD(request: GenerateImageRequest): Promise<GenerateImageResponse> {
   try {
+    if (!replicate) {
+      return {
+        success: false,
+        error: 'AI service not configured. Please set REPLICATE_API_TOKEN.'
+      }
+    }
+
     const promptData = getPrompt(request.category, request.templateId)
 
     if (!promptData) {
