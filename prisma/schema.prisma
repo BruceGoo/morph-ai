@@ -1,0 +1,200 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// User model
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  name          String?
+  password      String?
+  image         String?
+  emailVerified DateTime?
+  role          String  @default("USER") // USER, ADMIN
+
+  // Subscription
+  subscriptionTier String @default("FREE") // FREE, PRO, ENTERPRISE
+  subscriptionStatus String? // active, canceled, past_due
+  stripeCustomerId String? @unique
+  paypalSubscriptionId String? @unique
+  subscriptionEndsAt DateTime?
+
+  // Usage limits
+  dailyGenerations Int @default(0)
+  totalGenerations Int @default(0)
+  lastGenerationReset DateTime @default(now())
+
+  // Relations
+  accounts      Account[]
+  sessions      Session[]
+  generations   Generation[]
+  likes         Like[]
+  comments      Comment[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([email])
+}
+
+// NextAuth models
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// Generation model
+model Generation {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Input
+  originalImageUrl String
+
+  // Output
+  generatedImageUrl String?
+
+  // Metadata
+  category    String // universe, prank, outfit
+  templateId  String
+  prompt      String
+  negativePrompt String?
+
+  // Status
+  status      String @default("PENDING") // PENDING, PROCESSING, COMPLETED, FAILED
+  error       String?
+
+  // Engagement
+  isPublic    Boolean @default(false)
+  likes       Like[]
+  comments    Comment[]
+  views       Int @default(0)
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([userId])
+  @@index([category])
+  @@index([status])
+  @@index([isPublic])
+  @@index([createdAt])
+}
+
+// Like model
+model Like {
+  id           String     @id @default(cuid())
+  userId       String
+  generationId String
+
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  generation   Generation @relation(fields: [generationId], references: [id], onDelete: Cascade)
+
+  createdAt    DateTime   @default(now())
+
+  @@unique([userId, generationId])
+  @@index([userId])
+  @@index([generationId])
+}
+
+// Comment model
+model Comment {
+  id           String     @id @default(cuid())
+  userId       String
+  generationId String
+  content      String
+
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  generation   Generation @relation(fields: [generationId], references: [id], onDelete: Cascade)
+
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  @@index([userId])
+  @@index([generationId])
+  @@index([createdAt])
+}
+
+// Payment model
+model Payment {
+  id              String   @id @default(cuid())
+  userId          String
+
+  // Payment details
+  amount          Float
+  currency        String   @default("USD")
+  provider        String // STRIPE, PAYPAL
+  status          String // PENDING, COMPLETED, FAILED, REFUNDED
+
+  // Provider IDs
+  stripePaymentId String?  @unique
+  paypalOrderId   String?  @unique
+
+  // Subscription
+  subscriptionTier String? // FREE, PRO, ENTERPRISE
+  billingPeriod   String? // monthly, yearly
+
+  // Metadata
+  metadata        String? // JSON string
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([userId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+// System config model
+model SystemConfig {
+  id    String @id @default(cuid())
+  key   String @unique
+  value String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([key])
+}
+
